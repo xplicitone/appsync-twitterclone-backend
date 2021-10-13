@@ -223,7 +223,8 @@ const a_user_calls_tweet = async (user, text) => {
       text
       replies
       likes
-      retweets
+      retweets,
+      liked
     }
   }`
 
@@ -259,7 +260,8 @@ const a_user_calls_getTweets = async (user, userId, limit, nextToken) => {
           text
           replies
           likes
-          retweets
+          retweets,
+          liked
         }
       }
     }
@@ -299,7 +301,8 @@ const a_user_calls_getTimeline = async (user, limit, nextToken) => {
           text
           replies
           likes
-          retweets
+          retweets,
+          liked
         }
       }
     }
