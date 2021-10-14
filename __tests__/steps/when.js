@@ -367,6 +367,26 @@ const a_user_calls_like = async (user, tweetId) => {
   return result
 }
 
+const a_user_calls_unlike = async (user, tweetId) => {
+  const unlike = `mutation unlike($tweetId: ID!) {
+    unlike(tweetId: $tweetId)
+  }`
+
+  const variables = {
+    tweetId
+  }
+
+  // helper module allows us to create request to AppSync
+  // need to know AppSync API's URL, query we're trying to send, as well as any variables for query, auth header (user's access token)
+  const data = await GraphQL(process.env.API_URL, unlike, variables, user.accessToken)
+  //can see data.editMyProfile in appsync console with successful query
+  const result = data.unlike
+
+  console.log(`[${user.username}] - unliked tweet [${tweetId}]`)
+
+  return result
+}
+
 module.exports = {
   we_invoke_confirmUserSignup,
   we_invoke_getImageUploadUrl,
@@ -379,5 +399,6 @@ module.exports = {
   a_user_calls_tweet,
   a_user_calls_getTweets,
   a_user_calls_getMyTimeline,
-  a_user_calls_like
+  a_user_calls_like,
+  a_user_calls_unlike
 }

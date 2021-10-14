@@ -105,12 +105,34 @@ describe('Given an authenticated user', () => {
         expect(tweets[0].liked).toEqual(true)
       })
 
-      it('Should not be able to list the same tweet a second time', async () => {
+      it('Should not be able to like the same tweet a second time', async () => {
         await expect(() => when.a_user_calls_like(user, tweet.id))
           .rejects
           .toMatchObject({
             message: expect.stringContaining('DynamoDB transaction error')
           })
+      })
+
+      describe('When he unlikes the tweet', () => {
+        beforeAll(async () => {
+          await when.a_user_calls_unlike(user, tweet.id)
+        })
+
+        it('Should see Tweet.liked as false', async () => {
+          const { tweets } = await when.a_user_calls_getMyTimeline(user, 25)
+  
+          expect(tweets).toHaveLength(1)
+          expect(tweets[0].id).toEqual(tweet.id)
+          expect(tweets[0].liked).toEqual(false)
+        })
+  
+        it('Should not be able to unlike the same tweet a second time', async () => {
+          await expect(() => when.a_user_calls_unlike(user, tweet.id))
+            .rejects
+            .toMatchObject({
+              message: expect.stringContaining('DynamoDB transaction error')
+            })
+        })
       })
     })
   })
