@@ -1,4 +1,5 @@
 require('dotenv').config()
+const { before } = require('lodash')
 const given = require('../../steps/given')
 const then = require('../../steps/then')
 const when = require('../../steps/when')
@@ -64,10 +65,10 @@ describe('Given an authenticated user', () => {
       })      
     })
 
-    describe('When they call getTyTimeline', () => {
+    describe('When they call getMyTimeline', () => {
       let tweets, nextToken
       beforeAll(async () => {
-        const result = await when.a_user_calls_getTimeline(user, 25)
+        const result = await when.a_user_calls_getMyTimeline(user, 25)
         tweets = result.tweets
         nextToken = result.nextToken
       })
@@ -83,7 +84,7 @@ describe('Given an authenticated user', () => {
       })
   
       it('They cannot ask for more than 25 tweets in a page.', async () => {
-        await expect(when.a_user_calls_getTimeline(user, 26))
+        await expect(when.a_user_calls_getMyTimeline(user, 26))
           .rejects
           .toMatchObject({
             message: expect.stringContaining('max limit is 25')
@@ -91,5 +92,26 @@ describe('Given an authenticated user', () => {
       })      
     })
 
+    describe('When they like the tweet', () => {
+      beforeAll(async () => {
+        await when.a_user_calls_like(user, tweet.id)
+      })
+
+      it('Should see Tweet.liked as true', async () => {
+        const { tweets } = await when.a_user_calls_getMyTimeline(user, 25)
+
+        expect(tweets).toHaveLength(1)
+        expect(tweets[0].id).toEqual(tweet.id)
+        expect(tweets[0].liked).toEqual(true)
+      })
+
+      it('Should not be able to list the same tweet a second time', async () => {
+        await expect(() => when.a_user_calls_like(user, tweet.id))
+          .rejects
+          .toMatchObject({
+            message: expect.stringContaining('DynamoDB transaction error')
+          })
+      })
+    })
   })
 })
