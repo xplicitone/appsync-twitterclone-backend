@@ -32,7 +32,11 @@ describe('Given an authenticated user', () => {
       followersCount: 0,
       followingCount: 0,
       tweetsCount: 0,
-      likesCount: 0
+      likesCount: 0,
+      tweets: {
+        nextToken: null,
+        tweets: []
+      }
     })
 
     // can check the user's screenName is constructed with first name and last name of the user
