@@ -66,7 +66,22 @@ fragment tweetFields on Tweet {
   replies
   likes
   retweets
+  retweeted
   liked
+}
+`
+const retweetFragment = `
+fragment retweetFields on Retweet {
+  id
+  profile {
+    ... iProfileFields
+  }
+  createdAt
+  retweetOf {
+    ... on Tweet {
+      ... tweetFields
+    }
+  }
 }
 `
 
@@ -75,6 +90,10 @@ fragment iTweetFields on ITweet {
   ... on Tweet {
     ... tweetFields
   }
+
+  ... on Retweet {
+    ... retweetFields
+  }
 }
 `
 
@@ -82,6 +101,7 @@ registerFragment('myProfileFields', myProfileFragment)
 registerFragment('otherProfileFields', otherProfileFragment)
 registerFragment('iProfileFields', iProfileFragment)
 registerFragment('tweetFields', tweetFragment)
+registerFragment('retweetFields', retweetFragment)
 registerFragment('iTweetFields', iTweetFragment)
 
 const we_invoke_confirmUserSignup = async (username, name, email) => {
@@ -148,6 +168,27 @@ const we_invoke_tweet = async (username, text) => {
     },
     arguments: {
       text
+    }
+  }
+
+  // invoke handler function and return the invokation which is going to be the signed S3 URL
+  return await handler(event, context)
+
+}
+
+const we_invoke_retweet = async (username, tweetId) => {
+
+  // use this to construct an event payload to call the retweet Lambda
+  const handler = require('../../functions/retweet').handler
+
+  const context = {}
+  // create the event payload itself
+  const event = {
+    identity: {
+      username
+    },
+    arguments: {
+      tweetId
     }
   }
 
@@ -419,10 +460,31 @@ const a_user_calls_getLikes = async (user, userId, limit, nextToken) => {
   return result
 }
 
+const a_user_calls_retweet = async (user, tweetId) => {
+  const retweet = `mutation retweet($tweetId: ID!) {
+    retweet(tweetId: $tweetId)
+  }`
+
+  const variables = {
+    tweetId
+  }
+
+  // helper module allows us to create request to AppSync
+  // need to know AppSync API's URL, query we're trying to send, as well as any variables for query, auth header (user's access token)
+  const data = await GraphQL(process.env.API_URL, retweet, variables, user.accessToken)
+  //can see data.editMyProfile in appsync console with successful query
+  const result = data.retweet
+
+  console.log(`[${user.username}] - retweeted tweet [${tweetId}]`)
+
+  return result
+}
+
 module.exports = {
   we_invoke_confirmUserSignup,
   we_invoke_getImageUploadUrl,
   we_invoke_tweet,
+  we_invoke_retweet,
   a_user_signs_up,
   we_invoke_an_appsync_template,
   a_user_calls_getMyProfile,
@@ -433,5 +495,6 @@ module.exports = {
   a_user_calls_getMyTimeline,
   a_user_calls_like,
   a_user_calls_unlike,
-  a_user_calls_getLikes
+  a_user_calls_getLikes,
+  a_user_calls_retweet
 }
