@@ -208,6 +208,27 @@ describe('Given an authenticated user', () => {
           }
         })
       })
+
+      describe('When they unretweets the tweet', () => {
+        beforeAll(async () => {
+          await when.a_user_calls_unretweet(userA, tweet.id) 
+        })
+
+        it('Should not see the retweet when they call getTweets anymore', async () => {
+          const { tweets } = await when.a_user_calls_getTweets(userA, userA.username, 25)
+
+          expect(tweets).toHaveLength(1) // should see original tweet and not the retweet anymore
+          expect(tweets[0]).toMatchObject({
+            ...tweet,
+            retweets: 0,
+            retweeted: false,
+            profile: {
+              id: userA.username,
+              tweetsCount: 1
+            }
+          })
+        })
+      })
     })
 
     describe('given another user, user B, sends a tweet', () => {
@@ -227,11 +248,11 @@ describe('Given an authenticated user', () => {
         it('Should see the retweet when he calls getTweets', async () => {
           const { tweets } = await when.a_user_calls_getTweets(userA, userA.username, 25)
   
-          expect(tweets).toHaveLength(3) // including first tweet and then the retweet
+          expect(tweets).toHaveLength(2) // including first tweet and then the retweet
           expect(tweets[0]).toMatchObject({      //expect newer tweet aka the retweet to come earlier
             profile: {
               id: userA.username,
-              tweetsCount: 3
+              tweetsCount: 2
             },
             retweetOf: {
               ...anotherTweet,
@@ -248,13 +269,47 @@ describe('Given an authenticated user', () => {
           expect(tweets[0]).toMatchObject({
             profile: {
               id: userA.username,
-              tweetsCount: 3
+              tweetsCount: 2
             },
             retweetOf: {
               ...anotherTweet,
               retweets: 1,
               retweeted: true
             }
+          })
+        })
+
+        describe ("When user A unretweets user B's tweet", () => {
+          beforeAll(async () => {
+            await when.a_user_calls_unretweet(userA, anotherTweet.id)
+          })
+
+          it('User A should not see the retweet when they call getTweets anymore', async () => {
+            const { tweets } = await when.a_user_calls_getTweets(userA, userA.username, 25)
+
+            expect(tweets).toHaveLength(1) // should see original tweet and not the retweet anymore
+            expect(tweets[0]).toMatchObject({
+              ...tweet,
+              retweets: 0,
+              retweeted: false,
+              profile: {
+                id: userA.username,
+                tweetsCount: 1
+              }
+            })
+          })
+          
+          it('User A should not see the retweet when they call getMyTimeline anymore', async () => {
+            const { tweets } = await when.a_user_calls_getMyTimeline(userA, 25)
+  
+            expect(tweets).toHaveLength(1)
+            expect(tweets[0]).toMatchObject({
+              ...tweet,
+              profile: {
+                id: userA.username,
+                tweetsCount: 1
+              }
+            })
           })
         })
       })

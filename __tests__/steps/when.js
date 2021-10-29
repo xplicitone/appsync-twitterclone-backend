@@ -197,6 +197,27 @@ const we_invoke_retweet = async (username, tweetId) => {
 
 }
 
+const we_invoke_unretweet = async (username, tweetId) => {
+
+  // use this to construct an event payload to call the retweet Lambda
+  const handler = require('../../functions/unretweet').handler
+
+  const context = {}
+  // create the event payload itself
+  const event = {
+    identity: {
+      username
+    },
+    arguments: {
+      tweetId
+    }
+  }
+
+  // invoke handler function and return the invokation which is going to be the signed S3 URL
+  return await handler(event, context)
+
+}
+
 // we'll actually have to talk to Cognito so bring in the aws-sdk
 const a_user_signs_up = async (password, name, email) => {
   const cognito = new AWS.CognitoIdentityServiceProvider()
@@ -480,11 +501,32 @@ const a_user_calls_retweet = async (user, tweetId) => {
   return result
 }
 
+const a_user_calls_unretweet = async (user, tweetId) => {
+  const unretweet = `mutation unretweet($tweetId: ID!) {
+    unretweet(tweetId: $tweetId)
+  }`
+
+  const variables = {
+    tweetId
+  }
+
+  // helper module allows us to create request to AppSync
+  // need to know AppSync API's URL, query we're trying to send, as well as any variables for query, auth header (user's access token)
+  const data = await GraphQL(process.env.API_URL, unretweet, variables, user.accessToken)
+  //can see data.editMyProfile in appsync console with successful query
+  const result = data.unretweet
+
+  console.log(`[${user.username}] - retweeted tweet [${tweetId}]`)
+
+  return result
+}
+
 module.exports = {
   we_invoke_confirmUserSignup,
   we_invoke_getImageUploadUrl,
   we_invoke_tweet,
   we_invoke_retweet,
+  we_invoke_unretweet,
   a_user_signs_up,
   we_invoke_an_appsync_template,
   a_user_calls_getMyProfile,
@@ -496,5 +538,6 @@ module.exports = {
   a_user_calls_like,
   a_user_calls_unlike,
   a_user_calls_getLikes,
-  a_user_calls_retweet
+  a_user_calls_retweet,
+  a_user_calls_unretweet
 }
